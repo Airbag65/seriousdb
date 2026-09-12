@@ -33,3 +33,8 @@ async def put(key: str, value: str, cache: Annotated[Cache, Depends(get_cache)])
 @app.get("/db")
 async def get(key: str, cache: Annotated[Cache, Depends(get_cache)]):
     return select(key, cache)
+
+
+@app.head("/db")
+async def head(key: str, cache: Annotated[Cache, Depends(get_cache)]):
+    return select(key, cache)
