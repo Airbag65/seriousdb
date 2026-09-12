@@ -2,127 +2,36 @@
 
 `seriousdb` is a small HTTP-based key-value store written in Python using [FastAPI](https://fastapi.tiangolo.com/).
 
-Currently, data is stored in a local `.sdb` file using Python's `pickle` module.
+For setup, usage, architecture, persistence, and contribution guidance, see the
+[documentation](docs/).
 
-## Requirements
+## Quick Start
 
-- Python 3.11 or newer
-- pip
-
-The project's dependencies are declared in `pyproject.toml` and include:
-
-- FastAPI
-- Black
-
-## Installation
-
-Clone the repository and enter the project directory:
+Clone the repository, install the project, and start the development server:
 
 ```bash
 git clone https://github.com/danieldeer/seriousdb.git
 cd seriousdb
+uv sync
+uv run fastapi dev main.py
 ```
 
-Create and activate a virtual environment:
+The server is available at `http://127.0.0.1:8000`.
 
-### Windows
+Interactive API documentation is available at:
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+- [Swagger UI](http://127.0.0.1:8000/docs)
+- [ReDoc](http://127.0.0.1:8000/redoc)
+- [OpenAPI schema](http://127.0.0.1:8000/openapi.json)
 
-### macOS / Linux
+## Documentation
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
+- [API reference](docs/api.md)
+- [Architecture](docs/architecture.md)
+- [Development guide](docs/development.md)
+- [Persistence](docs/persistence.md)
+- [Contributing](docs/contributing.md)
 
-Install the project and its dependencies:
+## License
 
-```bash
-pip install .
-```
-
-## Running the Server
-
-Start the FastAPI development server:
-
-```bash
-fastapi dev main.py
-```
-
-The server will be available at:
-
-```text
-http://127.0.0.1:8000
-```
-
-FastAPI also provides interactive API documentation at:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-## Current API
-
-### PUT `/db`
-
-Stores or updates a key-value pair.
-
-Parameters:
-
-- `key` - The key to store.
-- `value` - The value associated with the key.
-
-For example:
-
-```text
-key: name
-value: Alice
-```
-
-This stores:
-
-```python
-{"name": "Alice"}
-```
-
-alongside any existing key-value pairs.
-
-### GET `/db`
-
-Retrieves the value associated with a key.
-
-For example:
-
-```text
-key: name
-```
-
-returns:
-
-```text
-Alice
-```
-
-If the requested key does not exist, the API returns a `404` response.
-
-## Persistence
-
-When the application starts for the first time, it creates a `.sdb` file containing a default key-value pair:
-
-```python
-{"default": "default"}
-```
-
-When a value is added or updated, the dictionary is serialized to the `.sdb` file using Python's `pickle` module.
-
-## Contributing
-
-Before contributing, format your code:
-
-```bash
-uv tool run black <src>
-```
+This project is licensed under the [MIT License](LICENSE).
