@@ -1,7 +1,9 @@
 import pickle
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi import HTTPException
+
+from auth import is_validated
 
 db_file = ".sdb"
 
@@ -13,9 +15,12 @@ if not os.path.isfile(db_file):
 
 app = FastAPI()
 
+
 @app.put("/db")
-async def put(key: str, value: str):
+async def put(request: Request, key: str, value: str):
     db = None
+    if not is_validated(request):
+        raise HTTPException(status_code=401, detail=f"Not authenticated")
     with open(db_file, "rb") as f:
         db = pickle.load(f)
         db[key] = value
@@ -25,14 +30,20 @@ async def put(key: str, value: str):
     f.close()
     return value
 
+
 @app.get("/db")
-async def get(key: str):
+async def get(request: Request, key: str):
     db = None
+    if not is_validated(request):
+        raise HTTPException(status_code=401, detail=f"Not authenticated")
     with open(db_file, "rb") as f:
         db = pickle.load(f)
     f.close()
     if db is None:
-        raise HTTPException(status_code=404, detail=f"Database file {db_file} could not be opened and loaded")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Database file {db_file} could not be opened and loaded",
+        )
     val = db.get(key, None)
     if val is None:
         raise HTTPException(status_code=404, detail=f"No value set for key {key}")
