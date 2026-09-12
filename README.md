@@ -12,10 +12,8 @@ Clone the repository, install the project, and start the development server:
 ```bash
 git clone https://github.com/danieldeer/seriousdb.git
 cd seriousdb
-python3 -m venv .venv
-source .venv/bin/activate
-pip install .
-fastapi dev main.py
+uv sync
+uv run fastapi dev main.py
 ```
 
 The server is available at `http://127.0.0.1:8000`.

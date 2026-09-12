@@ -3,20 +3,18 @@
 ## Requirements
 
 - Python 3.11 or newer
-- `pip`
+- `uv`
 
 ## Setup
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install .
+uv sync
 ```
 
 ## Run locally
 
 ```bash
-fastapi dev main.py
+uv run fastapi dev main.py
 ```
 
 The server is available at `http://127.0.0.1:8000` and its interactive API documentation is at `/docs`.
