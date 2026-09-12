@@ -1,9 +1,11 @@
 import pickle
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 
 from auth import is_validated
+from configuration import CONFIG
 
 db_file = ".sdb"
 
@@ -14,13 +16,22 @@ if not os.path.isfile(db_file):
     f.close()
 
 app = FastAPI()
+CONFIG.load_env()
+
+
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    if not is_validated(request):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED, content={"status": "Unauthorized"}
+        )
+    response = await call_next(request)
+    return response
 
 
 @app.put("/db")
-async def put(request: Request, key: str, value: str):
+async def put(key: str, value: str):
     db = None
-    if not is_validated(request):
-        raise HTTPException(status_code=401, detail=f"Not authenticated")
     with open(db_file, "rb") as f:
         db = pickle.load(f)
         db[key] = value
@@ -32,10 +43,8 @@ async def put(request: Request, key: str, value: str):
 
 
 @app.get("/db")
-async def get(request: Request, key: str):
+async def get(key: str):
     db = None
-    if not is_validated(request):
-        raise HTTPException(status_code=401, detail=f"Not authenticated")
     with open(db_file, "rb") as f:
         db = pickle.load(f)
     f.close()
