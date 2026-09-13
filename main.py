@@ -1,11 +1,11 @@
 import pickle
 import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 
-from auth import is_validated
-from configuration import CONFIG
+from auth import is_validated, require_auth
 
 db_file = ".sdb"
 
@@ -16,7 +16,10 @@ if not os.path.isfile(db_file):
     f.close()
 
 app = FastAPI()
-CONFIG.load_env()
+
+if not load_dotenv():
+    if require_auth:
+        raise RuntimeError(".env must exist and contain 'AUTH_TOKEN'")
 
 
 @app.middleware("http")

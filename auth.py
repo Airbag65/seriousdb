@@ -1,13 +1,12 @@
 import os
 
 from fastapi import Request
-from dotenv import load_dotenv
 
-from configuration import CONFIG
+require_auth: bool = True
 
 
 def is_validated(request: Request) -> bool:
-    if not CONFIG.require_auth:
+    if not require_auth:
         return True
     token = os.getenv("AUTH_TOKEN")
     auth_header = request.headers.get("Authorization")
