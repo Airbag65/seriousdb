@@ -31,7 +31,9 @@ def load(filename: str, cache: Cache):
             try:
                 with open(filename, "rb") as f:
                     cache.db = json.loads(f.read().decode())
-            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                    if not isinstance(cache.db, dict):
+                        raise ValueError(f"expected dict, got {type(cache.db).__name__}")
+            except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as e:
                 backup = f"{filename}.corrupt-{int(time.time())}"
                 os.replace(filename, backup)
                 logger.warning(
