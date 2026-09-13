@@ -24,7 +24,7 @@ def get_cache() -> Cache:
 
 
 @app.put("/db")
-async def put(
+def put(
     key: str,
     value: str,
     background_tasks: BackgroundTasks,
@@ -36,5 +36,5 @@ async def put(
 
 
 @app.get("/db")
-async def get(key: str, cache: Annotated[Cache, Depends(get_cache)]):
+def get(key: str, cache: Annotated[Cache, Depends(get_cache)]):
     return select(key, cache)
