@@ -35,7 +35,7 @@ async def get(key: str):
         db = json.load(f)
     if db is None:
         raise HTTPException(
-            status_code=404,
+            status_code=503,
             detail=f"Database file {db_file} could not be opened and loaded",
         )
     val = db.get(key, None)
