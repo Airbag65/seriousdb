@@ -11,6 +11,12 @@
 uv sync
 ```
 
+To sync development dependencies run following command:
+
+```bash
+uv sync --group dev
+```
+
 ## Run locally
 
 ```bash
