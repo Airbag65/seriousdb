@@ -4,8 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from fastapi.testclient import TestClient
 
-
-import main
+from seriousdb import main
 
 
 @pytest.fixture
@@ -15,10 +14,10 @@ def client(tmp_path, monkeypatch):
     with open(db_file, "w") as f:
         json.dump({"default": "default"}, f)
 
-    monkeypatch.setattr(main, "db_file", str(db_file))
-    main.load(str(db_file), main.cache)
+    monkeypatch.setattr(main, "DB_FILE", str(db_file))
 
-    return TestClient(main.app)
+    with TestClient(main.app) as test_client:
+        yield test_client
 
 
 def test_put_stores_value(client):
