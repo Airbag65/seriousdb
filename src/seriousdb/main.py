@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import BackgroundTasks, Depends, FastAPI
 
 from .cache import Cache, flush, load
 from .config import DB_FILE
@@ -24,9 +24,14 @@ def get_cache() -> Cache:
 
 
 @app.put("/db")
-async def put(key: str, value: str, cache: Annotated[Cache, Depends(get_cache)]):
+async def put(
+    key: str,
+    value: str,
+    background_tasks: BackgroundTasks,
+    cache: Annotated[Cache, Depends(get_cache)],
+):
     insert(key, value, cache)
-    flush(cache)
+    background_tasks.add_task(flush, cache)
     return value
 
 
