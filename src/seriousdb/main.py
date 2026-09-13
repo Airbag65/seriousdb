@@ -1,15 +1,19 @@
 from fastapi import FastAPI, Depends
+from contextlib import asynccontextmanager
 from .cache import Cache, load, flush
 from .db import insert, select
 from .config import DB_FILE
 
-app = FastAPI()
 cache = Cache()
 
 
-@app.on_event("startup")
-def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     load(DB_FILE, cache)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 def get_cache() -> Cache:
