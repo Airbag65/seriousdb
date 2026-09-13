@@ -17,7 +17,7 @@
         let
           pkgs = import nixpkgs { inherit system; };
           python = pkgs.python314.withPackages (pythonPackages: with pythonPackages; [
-            black
+            ruff
             fastapi
             fastapi-cli
           ]);
