@@ -37,7 +37,13 @@ docker run -p 8000:8000 seriousdb
 Format Python files with `ruff`:
 
 ```bash
-uv tool run ruff .
+uv run ruff format .
+```
+
+To check formatting without changing files:
+
+```bash
+uv run ruff format --check .
 ```
 
 ## Linting
