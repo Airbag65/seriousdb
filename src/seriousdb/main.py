@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
-from .cache import Cache, load, flush
-from .db import insert, select
+
+from fastapi import Depends, FastAPI
+
+from .cache import Cache, flush, load
 from .config import DB_FILE
+from .db import insert, select
 
 cache = Cache()
 
