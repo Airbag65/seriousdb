@@ -2,6 +2,5 @@
 	"port": 8000,
 	"require_auth": false,
 	"debug": true,
-	"db_file": ".sdb",
-	"should_warn": true
+	"db_file": ".sdb"
 }
