@@ -21,8 +21,22 @@ The server is available at `http://127.0.0.1:8000` and its interactive API docum
 
 ## Formatting
 
-Format Python files with Black:
+Format Python files with `ruff`:
 
 ```bash
-uv tool run black main.py
+uv tool run ruff .
+```
+
+## Linting
+
+Lint python files with `ruff`:
+
+```bash
+uv tool run ruff check .
+```
+
+To fix linter errors and warning if possible run following command:
+
+```bash
+uv tool run ruff check --fix .
 ```
