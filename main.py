@@ -1,4 +1,4 @@
-import pickle
+import json
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, status
@@ -12,8 +12,8 @@ db_file = ".sdb"
 # Check if the database file exists, if not populate it
 if not os.path.isfile(db_file):
     with open(db_file, "wb") as f:
-        pickle.dump({"default": "default"}, f)
-    f.close()
+        json_dumps = json.dumps({"default": "default"}).encode()
+        f.write(json_dumps)
 
 app = FastAPI()
 
@@ -36,12 +36,13 @@ async def auth_middleware(request: Request, call_next):
 async def put(key: str, value: str):
     db = None
     with open(db_file, "rb") as f:
-        db = pickle.load(f)
+        binary_text = f.readline()
+        json_text = binary_text.decode()
+        db = json.loads(json_text)
         db[key] = value
-    f.close()
     with open(db_file, "wb+") as f:
-        pickle.dump(db, f)
-    f.close()
+        json_dumps = json.dumps(db).encode()
+        f.write(json_dumps)
     return value
 
 
@@ -49,8 +50,7 @@ async def put(key: str, value: str):
 async def get(key: str):
     db = None
     with open(db_file, "rb") as f:
-        db = pickle.load(f)
-    f.close()
+        db = json.load(f)
     if db is None:
         raise HTTPException(
             status_code=404,
