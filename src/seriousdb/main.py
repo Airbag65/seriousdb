@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 from fastapi import Depends, FastAPI
 
@@ -23,12 +24,12 @@ def get_cache() -> Cache:
 
 
 @app.put("/db")
-async def put(key: str, value: str, cache: Cache = Depends(get_cache)):
+async def put(key: str, value: str, cache: Annotated[Cache, Depends(get_cache)]):
     insert(key, value, cache)
     flush(cache)
     return value
 
 
 @app.get("/db")
-async def get(key: str, cache: Cache = Depends(get_cache)):
+async def get(key: str, cache: Annotated[Cache, Depends(get_cache)]):
     return select(key, cache)
