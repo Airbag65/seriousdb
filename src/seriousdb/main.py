@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI
 from .cache import Cache, flush, load
 from .config import DB_FILE
 from .db import insert, select
+from .error_handlers import register_exception_handlers
 
 cache = Cache()
 
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+register_exception_handlers(app)
 
 
 def get_cache() -> Cache:

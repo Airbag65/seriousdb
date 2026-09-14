@@ -4,6 +4,8 @@ import os
 import time
 from threading import Lock
 
+from .exceptions import ServiceUnavailableError
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_DB = {"default": "default"}
@@ -49,3 +51,13 @@ def flush(cache: Cache):
             return
         with open(cache.filename, "wb+") as f:
             f.write(json.dumps(cache.db).encode())
+
+
+def require_db(cache: Cache) -> dict[str, str]:
+    """Return the loaded database or fail with an expected application error."""
+    if cache.db is None:
+        raise ServiceUnavailableError(
+            f"Database file {cache.filename} could not be opened and loaded"
+        )
+
+    return cache.db
