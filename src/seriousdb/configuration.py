@@ -12,13 +12,15 @@ class Configuration:
     require_auth: bool = False
     db_file: str = ".sdb"
 
+    @classmethod
+    def _known_fields(cls):
+        return {f.name: f for f in fields(cls)}
+
     @staticmethod
     def warning_message() -> str:
         message = "\nConfiguration-file is malformed. The supported fields are:"
-        message += "\n\tport: int"
-        message += "\n\tdebug: bool"
-        message += "\n\trequire_auth: bool"
-        message += "\n\tdb_file: str"
+        for name, item in Configuration._known_fields().items():
+            message += f"\n\t{name}: {item.type.__name__}"
         return message
 
     @classmethod
@@ -30,15 +32,14 @@ class Configuration:
             warnings.warn(
                 Configuration.warning_message(), MalformedConfigurationWarning
             )
-        known_fields = {f.name: f for f in fields(cls)}
 
         valid_kwargs = {}
-        for name, field in known_fields.items():
+        for name, item in Configuration._known_fields().items():
             if name in json_data:
                 val = json_data[name]
-                if field.type is int and isinstance(val, bool):
+                if item.type is int and isinstance(val, bool):
                     continue
-                elif isinstance(val, field.type):
+                elif isinstance(val, item.type):
                     valid_kwargs[name] = val
         return cls(**valid_kwargs)
 
