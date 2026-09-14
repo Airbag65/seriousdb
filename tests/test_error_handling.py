@@ -115,17 +115,20 @@ class ApiErrorResponseTests(unittest.TestCase):
         self.addCleanup(self.client.__exit__, None, None, None)
 
     def test_missing_key_returns_a_structured_404(self):
-        response = self.client.get("/db", params={"key": "does-not-exist"})
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json(),
-            {
-                "detail": "No value set for key does-not-exist",
-                "error": "resource_not_found",
-            },
-        )
+        for response in (
+            self.client.get("/db", params={"key": "does-not-exist"}),
+            self.client.delete("/db", params={"key": "does-not-exist"}),
+        ):
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(
+                response.json(),
+                {
+                    "detail": "No value set for key does-not-exist",
+                    "error": "resource_not_found",
+                },
+            )
 
-    def test_unloaded_database_returns_503_on_get_and_put(self):
+    def test_unloaded_database_returns_503_on_every_endpoint(self):
         unloaded = Cache()
         unloaded.filename = "missing.sdb"
         main.app.dependency_overrides[main.get_cache] = lambda: unloaded
@@ -133,6 +136,7 @@ class ApiErrorResponseTests(unittest.TestCase):
         for response in (
             self.client.get("/db", params={"key": "name"}),
             self.client.put("/db", params={"key": "name", "value": "Alice"}),
+            self.client.delete("/db", params={"key": "name"}),
         ):
             self.assertEqual(response.status_code, 503)
             self.assertEqual(response.json()["error"], "service_unavailable")

@@ -3,9 +3,8 @@ from typing import Annotated
 
 from fastapi import BackgroundTasks, Depends, FastAPI
 
-from .cache import Cache, flush, load
+from .cache import Cache
 from .config import DB_FILE
-from .db import insert, select
 from .error_handlers import register_exception_handlers
 
 cache = Cache()
@@ -13,7 +12,7 @@ cache = Cache()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    load(DB_FILE, cache)
+    cache.load(DB_FILE)
     yield
 
 
@@ -32,11 +31,16 @@ def put(
     background_tasks: BackgroundTasks,
     cache: Annotated[Cache, Depends(get_cache)],
 ):
-    insert(key, value, cache)
-    background_tasks.add_task(flush, cache)
+    cache.insert(key, value)
+    background_tasks.add_task(cache.flush)
     return value
 
 
 @app.get("/db")
 def get(key: str, cache: Annotated[Cache, Depends(get_cache)]):
-    return select(key, cache)
+    return cache.select(key)
+
+
+@app.delete("/db")
+def delete(key: str, cache: Annotated[Cache, Depends(get_cache)]):
+    return cache.delete(key)
