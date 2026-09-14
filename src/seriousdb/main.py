@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 
 from .cache import Cache, flush, load
 from .config import DB_FILE
@@ -33,3 +33,10 @@ async def put(key: str, value: str, cache: Annotated[Cache, Depends(get_cache)])
 @app.get("/db")
 async def get(key: str, cache: Annotated[Cache, Depends(get_cache)]):
     return select(key, cache)
+
+
+@app.get("/health")
+async def health(cache: Annotated[Cache, Depends(get_cache)]):
+    if cache.db is None:
+        raise HTTPException(status_code=503, detail="Service unavailable")
+    return {"status": "ok"}
