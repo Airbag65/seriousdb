@@ -1,33 +1,43 @@
 import unittest
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from seriousdb import main
 from seriousdb.cache import Cache
-from seriousdb.main import app, get_cache
 
 
 class HealthEndpointTests(unittest.TestCase):
-    def test_health_reports_ready_cache(self):
-        cache = Cache()
-        cache.db = {"default": "default"}
-        app.dependency_overrides[get_cache] = lambda: cache
+    def test_health_reports_ready_after_startup_loads_cache(self):
+        with TemporaryDirectory() as directory:
+            database_path = f"{directory}/test.sdb"
+            original_filename = main.cache.filename
+            original_db = main.cache.db
 
-        try:
-            response = TestClient(app).get("/health")
-        finally:
-            app.dependency_overrides.clear()
+            try:
+                main.cache.filename = None
+                main.cache.db = None
+                with (
+                    patch.object(main, "DB_FILE", database_path),
+                    TestClient(main.app) as client,
+                ):
+                    response = client.get("/health")
+            finally:
+                main.cache.filename = original_filename
+                main.cache.db = original_db
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
 
     def test_health_reports_unavailable_cache(self):
         cache = Cache()
-        app.dependency_overrides[get_cache] = lambda: cache
+        main.app.dependency_overrides[main.get_cache] = lambda: cache
 
         try:
-            response = TestClient(app).get("/health")
+            response = TestClient(main.app).get("/health")
         finally:
-            app.dependency_overrides.clear()
+            main.app.dependency_overrides.clear()
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json(), {"detail": "Service unavailable"})
