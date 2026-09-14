@@ -6,11 +6,10 @@ All error responses produced by the application share the same structure::
 
 Expected errors are raised as :class:`~seriousdb.exceptions.ApplicationError`
 subclasses by the service and domain layers and translated here. Unexpected
-errors are logged with a full traceback and reported to the client as a
-generic ``500`` response so that no internal detail leaks out.
+errors are reported to the client as a generic ``500`` response so that no
+internal detail leaks out.
 """
 
-import logging
 from http import HTTPStatus
 
 from fastapi import FastAPI, Request
@@ -19,8 +18,6 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .exceptions import ApplicationError
-
-logger = logging.getLogger(__name__)
 
 INTERNAL_ERROR_DETAIL = "An internal server error occurred"
 
@@ -42,13 +39,6 @@ def error_response(
 async def handle_application_error(
     request: Request, exc: ApplicationError
 ) -> JSONResponse:
-    logger.warning(
-        "%s on %s %s: %s",
-        type(exc).__name__,
-        request.method,
-        request.url.path,
-        exc.detail,
-    )
     return error_response(exc.status_code, exc.detail, exc.error_code)
 
 
@@ -79,9 +69,6 @@ async def handle_request_validation_error(
 
 
 async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
-    logger.exception(
-        "Unhandled error on %s %s", request.method, request.url.path, exc_info=exc
-    )
     return error_response(
         HTTPStatus.INTERNAL_SERVER_ERROR,
         INTERNAL_ERROR_DETAIL,

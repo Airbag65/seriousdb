@@ -1,6 +1,5 @@
 """Tests for the centralized application errors and FastAPI exception handlers."""
 
-import logging
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -83,9 +82,8 @@ class HandlerTests(unittest.TestCase):
             {"detail": "database is gone", "error": "service_unavailable"},
         )
 
-    def test_unexpected_error_is_logged_without_leaking_details(self):
-        with self.assertLogs("seriousdb.error_handlers", level=logging.ERROR) as logs:
-            response = self.client.get("/boom")
+    def test_unexpected_error_does_not_leak_details(self):
+        response = self.client.get("/boom")
 
         self.assertEqual(response.status_code, 500)
         self.assertEqual(
@@ -93,10 +91,6 @@ class HandlerTests(unittest.TestCase):
             {"detail": INTERNAL_ERROR_DETAIL, "error": "internal_server_error"},
         )
         self.assertNotIn("hunter2", response.text)
-
-        logged = "\n".join(logs.output)
-        self.assertIn("hunter2", logged)
-        self.assertIn("Traceback", logged)
 
     def test_unknown_route_uses_the_standard_error_structure(self):
         response = self.client.get("/no-such-route")
