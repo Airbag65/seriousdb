@@ -17,4 +17,4 @@ The service starts with a default entry when `.sdb` does not exist. There is no 
 
 ## Error handling
 
-`exceptions.py` defines `ApplicationError` and its subclasses; `cache.py` and `db.py` raise them instead of `HTTPException`. `error_handlers.py` translates them into the responses documented in [the API reference](api.md) and answers anything unexpected with a generic `500`.
+`exceptions.py` defines `ApplicationError` and its subclasses; `cache.py` raises them instead of `HTTPException`. `error_handlers.py` translates them into the responses documented in [the API reference](api.md) and answers anything unexpected with a generic `500`.
