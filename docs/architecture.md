@@ -14,3 +14,7 @@ The service starts with a default entry when `.sdb` does not exist. There is no 
 2. The route loads the dictionary from `.sdb`.
 3. A `PUT` updates and rewrites the file; a `GET` reads the requested value.
 4. The route returns the value or a `404` error.
+
+## Error handling
+
+`exceptions.py` defines `ApplicationError` and its subclasses; `cache.py` and `db.py` raise them instead of `HTTPException`. `error_handlers.py` translates them into the responses documented in [the API reference](api.md) and answers anything unexpected with a logged, generic `500`.
