@@ -1,9 +1,6 @@
 """Tests for the centralized application errors and FastAPI exception handlers."""
 
-import unittest
-from pathlib import Path
-from tempfile import TemporaryDirectory
-
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -20,139 +17,141 @@ from seriousdb.exceptions import (
 )
 
 
-class ApplicationExceptionTests(unittest.TestCase):
-    def test_subclasses_share_the_application_error_base(self):
-        self.assertTrue(issubclass(ResourceNotFoundError, ApplicationError))
-        self.assertTrue(issubclass(ServiceUnavailableError, ApplicationError))
+@pytest.fixture
+def handler_client():
+    """A minimal app of its own, used to exercise the handlers in isolation."""
+    app = FastAPI()
+    register_exception_handlers(app)
+
+    @app.get("/not-found")
+    def not_found():
+        raise ResourceNotFoundError("nothing here")
+
+    @app.get("/unavailable")
+    def unavailable():
+        raise ServiceUnavailableError("database is gone")
+
+    @app.get("/boom")
+    def boom():
+        raise RuntimeError("connection string admin:hunter2 failed")
+
+    return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    """A TestClient for the real application, backed by a throwaway database file.
+
+    Entered as a context manager so that the lifespan handler loads the database.
+    Dependency overrides are cleared afterwards so that a test replacing the cache
+    cannot leak into the next one.
+    """
+    monkeypatch.setattr(main, "DB_FILE", str(tmp_path / ".sdb"))
+    try:
+        with TestClient(main.app) as client:
+            yield client
+    finally:
+        main.app.dependency_overrides.clear()
+
+
+class TestApplicationExceptions:
+    @pytest.mark.parametrize(
+        "subclass", [ResourceNotFoundError, ServiceUnavailableError]
+    )
+    def test_subclasses_share_the_application_error_base(self, subclass):
+        assert issubclass(subclass, ApplicationError)
 
     def test_detail_defaults_to_the_class_default(self):
-        self.assertEqual(
-            str(ResourceNotFoundError()), ResourceNotFoundError.default_detail
-        )
+        assert str(ResourceNotFoundError()) == ResourceNotFoundError.default_detail
 
     def test_detail_can_be_overridden(self):
-        self.assertEqual(str(ResourceNotFoundError("no such key")), "no such key")
+        assert str(ResourceNotFoundError("no such key")) == "no such key"
 
     def test_require_db_returns_the_loaded_database(self):
         cache = Cache()
         cache.db = {"default": "default"}
-        self.assertIs(require_db(cache), cache.db)
+        assert require_db(cache) is cache.db
 
     def test_require_db_raises_service_unavailable_without_a_database(self):
         cache = Cache()
         cache.filename = ".sdb"
-        with self.assertRaises(ServiceUnavailableError) as ctx:
+        with pytest.raises(ServiceUnavailableError, match=r"\.sdb"):
             require_db(cache)
-        self.assertIn(".sdb", str(ctx.exception))
 
 
-class HandlerTests(unittest.TestCase):
+class TestHandlers:
     """Handlers are exercised through a minimal app of their own."""
 
-    def setUp(self):
-        app = FastAPI()
-        register_exception_handlers(app)
+    def test_resource_not_found_maps_to_404(self, handler_client):
+        response = handler_client.get("/not-found")
+        assert response.status_code == 404
+        assert response.json() == {
+            "detail": "nothing here",
+            "error": "resource_not_found",
+        }
 
-        @app.get("/not-found")
-        def not_found():
-            raise ResourceNotFoundError("nothing here")
+    def test_service_unavailable_maps_to_503(self, handler_client):
+        response = handler_client.get("/unavailable")
+        assert response.status_code == 503
+        assert response.json() == {
+            "detail": "database is gone",
+            "error": "service_unavailable",
+        }
 
-        @app.get("/unavailable")
-        def unavailable():
-            raise ServiceUnavailableError("database is gone")
+    def test_unexpected_error_does_not_leak_details(self, handler_client):
+        response = handler_client.get("/boom")
 
-        @app.get("/boom")
-        def boom():
-            raise RuntimeError("connection string admin:hunter2 failed")
+        assert response.status_code == 500
+        assert response.json() == {
+            "detail": INTERNAL_ERROR_DETAIL,
+            "error": "internal_server_error",
+        }
+        assert "hunter2" not in response.text
 
-        self.client = TestClient(app, raise_server_exceptions=False)
-
-    def test_resource_not_found_maps_to_404(self):
-        response = self.client.get("/not-found")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json(), {"detail": "nothing here", "error": "resource_not_found"}
-        )
-
-    def test_service_unavailable_maps_to_503(self):
-        response = self.client.get("/unavailable")
-        self.assertEqual(response.status_code, 503)
-        self.assertEqual(
-            response.json(),
-            {"detail": "database is gone", "error": "service_unavailable"},
-        )
-
-    def test_unexpected_error_does_not_leak_details(self):
-        response = self.client.get("/boom")
-
-        self.assertEqual(response.status_code, 500)
-        self.assertEqual(
-            response.json(),
-            {"detail": INTERNAL_ERROR_DETAIL, "error": "internal_server_error"},
-        )
-        self.assertNotIn("hunter2", response.text)
-
-    def test_unknown_route_uses_the_standard_error_structure(self):
-        response = self.client.get("/no-such-route")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(sorted(response.json()), ["detail", "error"])
+    def test_unknown_route_uses_the_standard_error_structure(self, handler_client):
+        response = handler_client.get("/no-such-route")
+        assert response.status_code == 404
+        assert sorted(response.json()) == ["detail", "error"]
 
 
-class ApiErrorResponseTests(unittest.TestCase):
+class TestApiErrorResponses:
     """The real application returns the standard structure for its own errors."""
 
-    def setUp(self):
-        tmpdir = TemporaryDirectory()
-        self.addCleanup(tmpdir.cleanup)
+    @pytest.mark.parametrize("method", ["GET", "DELETE"])
+    def test_missing_key_returns_a_structured_404(self, client, method):
+        response = client.request(method, "/db", params={"key": "does-not-exist"})
+        assert response.status_code == 404
+        assert response.json() == {
+            "detail": "No value set for key does-not-exist",
+            "error": "resource_not_found",
+        }
 
-        original_db_file = main.DB_FILE
-        main.DB_FILE = str(Path(tmpdir.name) / ".sdb")
-        self.addCleanup(setattr, main, "DB_FILE", original_db_file)
-        self.addCleanup(main.app.dependency_overrides.clear)
-
-        self.client = TestClient(main.app)
-        self.client.__enter__()
-        self.addCleanup(self.client.__exit__, None, None, None)
-
-    def test_missing_key_returns_a_structured_404(self):
-        for response in (
-            self.client.get("/db", params={"key": "does-not-exist"}),
-            self.client.delete("/db", params={"key": "does-not-exist"}),
-        ):
-            self.assertEqual(response.status_code, 404)
-            self.assertEqual(
-                response.json(),
-                {
-                    "detail": "No value set for key does-not-exist",
-                    "error": "resource_not_found",
-                },
-            )
-
-    def test_unloaded_database_returns_503_on_every_endpoint(self):
+    @pytest.mark.parametrize(
+        ("method", "url", "params"),
+        [
+            pytest.param("GET", "/db", {"key": "name"}, id="get"),
+            pytest.param("PUT", "/db", {"key": "name", "value": "Alice"}, id="put"),
+            pytest.param("DELETE", "/db", {"key": "name"}, id="delete"),
+            pytest.param("GET", "/db/all", {}, id="get-all"),
+        ],
+    )
+    def test_unloaded_database_returns_503(self, client, method, url, params):
         unloaded = Cache()
         unloaded.filename = "missing.sdb"
         main.app.dependency_overrides[main.get_cache] = lambda: unloaded
 
-        for response in (
-            self.client.get("/db", params={"key": "name"}),
-            self.client.put("/db", params={"key": "name", "value": "Alice"}),
-            self.client.delete("/db", params={"key": "name"}),
-            self.client.get("/db/all"),
-        ):
-            self.assertEqual(response.status_code, 503)
-            self.assertEqual(response.json()["error"], "service_unavailable")
-            self.assertIn("missing.sdb", response.json()["detail"])
+        response = client.request(method, url, params=params)
 
-    def test_missing_query_parameter_returns_a_structured_422(self):
-        response = self.client.get("/db")
-        self.assertEqual(response.status_code, 422)
-        self.assertEqual(response.json()["error"], "request_validation_error")
+        assert response.status_code == 503
+        assert response.json()["error"] == "service_unavailable"
+        assert "missing.sdb" in response.json()["detail"]
 
-    def test_rejected_query_parameter_returns_a_structured_422(self):
-        response = self.client.put("/db", params={"key": "", "value": "Alice"})
-        self.assertEqual(response.status_code, 422)
-        self.assertEqual(response.json()["error"], "request_validation_error")
+    def test_missing_query_parameter_returns_a_structured_422(self, client):
+        response = client.get("/db")
+        assert response.status_code == 422
+        assert response.json()["error"] == "request_validation_error"
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_rejected_query_parameter_returns_a_structured_422(self, client):
+        response = client.put("/db", params={"key": "", "value": "Alice"})
+        assert response.status_code == 422
+        assert response.json()["error"] == "request_validation_error"
