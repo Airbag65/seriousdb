@@ -30,8 +30,6 @@ alongside any existing key-value pairs.
 
 If the key is empty, the API returns a `422` response.
 
-If the database has not been loaded, the API returns a `500` response.
-
 ### GET `/db`
 
 Retrieves the value associated with a key.
@@ -50,7 +48,21 @@ Alice
 
 If the requested key does not exist, the API returns a `404` response.
 
-If the database has not been loaded, the API returns a `500` response.
+### GET `/health`
+
+Reports whether the database cache has finished loading.
+
+When the service is ready, the endpoint returns `200`:
+
+```json
+{"status": "ok"}
+```
+
+If the cache is not ready, it returns `503`:
+
+```json
+{"detail": "Service unavailable"}
+```
 
 ### HEAD `/db`
 
@@ -65,8 +77,6 @@ key: name
 If the requested key exists, the API returns a `200` response.
 
 If the requested key does not exist, the API returns a `404` response.
-
-If the database has not been loaded, the API returns a `500` response.
 
 ### GET `/db/all`
 
@@ -88,8 +98,6 @@ returns:
 }
 ```
 
-If the database has not been loaded, the API returns a `500` response.
-
 ### DELETE `/db`
 
 Deletes a key-value pair.
@@ -108,4 +116,39 @@ If the key exists, the API returns its previous value.
 
 If the requested key does not exist, the API returns a `404` response.
 
-If the database has not been loaded, the API returns a `500` response.
+## Error responses
+
+All errors share the same JSON structure:
+
+```json
+{
+  "detail": "No value set for key name",
+  "error": "resource_not_found"
+}
+```
+
+* `detail` - a human readable message. For request validation errors this is the list of problems reported by FastAPI.
+* `error` - a stable, machine readable code.
+
+| Status | `error`                    | Meaning                                                      |
+| ------ | -------------------------- | ------------------------------------------------------------ |
+| `404`  | `resource_not_found`       | The requested key does not exist.                            |
+| `422`  | `request_validation_error` | A required query parameter is missing or has the wrong type. |
+| `503`  | `service_unavailable`      | The database file could not be opened and loaded.            |
+| `500`  | `internal_server_error`    | An unexpected error. Details are never returned.             |
+
+````
+
+And change the corresponding #28 PR bullet from:
+
+```text
+- Document the possible `500` response when the database has not been loaded.
+````
+
+to:
+
+```text
+- Document the possible `503` response when the database has not been loaded.
+```
+
+Postamble: after replacing the file, stage it and inspect the staged diff before committing.
