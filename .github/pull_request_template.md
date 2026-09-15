@@ -1,6 +1,6 @@
-## Motivation
+## Description
 
-<!-- What problem or need does this PR address? Link an issue when applicable. -->
+<!-- What does this PR do, and why is it needed? Give a concise overview and link an issue when applicable. -->
 
 ## Type of Change
 
