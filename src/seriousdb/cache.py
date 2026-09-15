@@ -12,8 +12,8 @@ DEFAULT_DB = {"default": "default"}
 
 class Cache:
     def __init__(self):
-        self.filename: str | None = None
-        self.db: dict[str, str] | None = None
+        self.filename = None
+        self.db = None
         self.lock = Lock()
 
     def insert(self, key: str, value: str):
@@ -72,7 +72,7 @@ class Cache:
 
     def flush(self):
         with self.lock:
-            if self.db is None or self.filename is None:
+            if self.db is None:
                 return
             with open(self.filename, "wb+") as f:
                 f.write(json.dumps(self.db).encode())
