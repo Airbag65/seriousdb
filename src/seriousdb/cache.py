@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from threading import Lock
+
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ class Cache:
         self.db: dict[str, str] | None = None
         self.lock = Lock()
 
-    def insert(self, key: str, value: str):
+    def insert(self, key: str, value: str) -> str:
         with self.lock:
             if self.db is None:
                 raise HTTPException(
@@ -26,7 +27,7 @@ class Cache:
             self.db[key] = value
         return value
 
-    def select(self, key: str):
+    def select(self, key: str) -> str:
         with self.lock:
             if self.db is None:
                 raise HTTPException(
@@ -38,7 +39,7 @@ class Cache:
             raise HTTPException(status_code=404, detail=f"No value set for key {key}")
         return val
 
-    def delete(self, key: str):
+    def delete(self, key: str) -> str:
         with self.lock:
             if self.db is None:
                 raise HTTPException(
@@ -50,7 +51,7 @@ class Cache:
             raise HTTPException(status_code=404, detail=f"No value set for key {key}")
         return val
 
-    def load(self, filename: str):
+    def load(self, filename: str) -> None:
         with self.lock:
             if not os.path.isfile(filename):
                 self.db = _write_default(filename)
@@ -70,7 +71,7 @@ class Cache:
                     self.db = _write_default(filename)
             self.filename = filename
 
-    def flush(self):
+    def flush(self) -> None:
         with self.lock:
             if self.db is None or self.filename is None:
                 return
