@@ -46,6 +46,22 @@ Alice
 
 If the requested key does not exist, the API returns a `404` response.
 
+### GET `/health`
+
+Reports whether the database cache has finished loading.
+
+When the service is ready, the endpoint returns `200`:
+
+```json
+{"status": "ok"}
+```
+
+If the cache is not ready, it returns `503`:
+
+```json
+{"detail": "Service unavailable"}
+```
+
 ### HEAD `/db`
 
 Checks if the requested key exists in the database.
