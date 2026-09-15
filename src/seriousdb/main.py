@@ -1,18 +1,18 @@
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 
-from .cache import Cache, flush, load
+from .cache import Cache
 from .config import DB_FILE
-from .db import insert, select
 
 cache = Cache()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    load(DB_FILE, cache)
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    cache.load(DB_FILE)
     yield
 
 
@@ -24,12 +24,44 @@ def get_cache() -> Cache:
 
 
 @app.put("/db")
-async def put(key: str, value: str, cache: Annotated[Cache, Depends(get_cache)]):
-    insert(key, value, cache)
-    flush(cache)
+def put(
+    key: Annotated[str, Query(min_length=1)],
+    value: str,
+    background_tasks: BackgroundTasks,
+    cache: Annotated[Cache, Depends(get_cache)],
+) -> str:
+    cache.insert(key, value)
+    background_tasks.add_task(cache.flush)
     return value
 
 
 @app.get("/db")
-async def get(key: str, cache: Annotated[Cache, Depends(get_cache)]):
-    return select(key, cache)
+def get(key: str, cache: Annotated[Cache, Depends(get_cache)]) -> str:
+    return cache.select(key)
+
+
+@app.head("/db")
+async def head(key: str, cache: Annotated[Cache, Depends(get_cache)]) -> str:
+    return cache.select(key)
+
+
+@app.get("/db/all")
+def get_all(cache: Annotated[Cache, Depends(get_cache)]) -> dict[str, str]:
+    with cache.lock:
+        if cache.db is None:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Database file {cache.filename} could not be opened and loaded",
+            )
+        return cache.db.copy()
+
+
+@app.delete("/db")
+def delete(
+    key: str,
+    background_tasks: BackgroundTasks,
+    cache: Annotated[Cache, Depends(get_cache)],
+):
+    value = cache.delete(key)
+    background_tasks.add_task(cache.flush)
+    return value
