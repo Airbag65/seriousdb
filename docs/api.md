@@ -30,6 +30,8 @@ alongside any existing key-value pairs.
 
 If the key is empty, the API returns a `422` response.
 
+If the database has not been loaded, the API returns a `500` response.
+
 ### GET `/db`
 
 Retrieves the value associated with a key.
@@ -47,6 +49,24 @@ Alice
 ```
 
 If the requested key does not exist, the API returns a `404` response.
+
+If the database has not been loaded, the API returns a `500` response.
+
+### HEAD `/db`
+
+Checks if the requested key exists in the database.
+
+For example:
+
+```text
+key: name
+```
+
+If the requested key exists, the API returns a `200` response.
+
+If the requested key does not exist, the API returns a `404` response.
+
+If the database has not been loaded, the API returns a `500` response.
 
 ### GET `/db/all`
 
@@ -68,6 +88,8 @@ returns:
 }
 ```
 
+If the database has not been loaded, the API returns a `500` response.
+
 ### DELETE `/db`
 
 Deletes a key-value pair.
@@ -82,6 +104,8 @@ For example:
 key: name
 ```
 
-If the key exists, the endpoint deletes it and returns its previous value.
+If the key exists, the API returns its previous value.
 
 If the requested key does not exist, the API returns a `404` response.
+
+If the database has not been loaded, the API returns a `500` response.
