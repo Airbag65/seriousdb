@@ -45,5 +45,11 @@ async def head(key: str, cache: Annotated[Cache, Depends(get_cache)]):
 
 
 @app.delete("/db")
-def delete(key: str, cache: Annotated[Cache, Depends(get_cache)]):
-    return cache.delete(key)
+def delete(
+    key: str,
+    background_tasks: BackgroundTasks,
+    cache: Annotated[Cache, Depends(get_cache)],
+):
+    value = cache.delete(key)
+    background_tasks.add_task(cache.flush)
+    return value
