@@ -47,7 +47,13 @@ class HealthEndpointTests(unittest.TestCase):
             main.app.dependency_overrides.clear()
 
         self.assertEqual(response.status_code, 503)
-        self.assertEqual(response.json(), {"detail": "Service unavailable"})
+        self.assertEqual(
+            response.json(),
+            {
+                "detail": "Service unavailable",
+                "error": "service_unavailable",
+            },
+        )
 
 
 if __name__ == "__main__":

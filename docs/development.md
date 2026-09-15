@@ -53,7 +53,13 @@ The readiness endpoint is available at `/health`.
 Format Python files with `ruff`:
 
 ```bash
-uv tool run ruff format .
+uv run ruff format .
+```
+
+To check formatting without changing files:
+
+```bash
+uv run ruff format --check .
 ```
 
 ### Nix in Nix develop
@@ -67,7 +73,7 @@ ruff format .
 Lint python files with `ruff`:
 
 ```bash
-uv tool run ruff check .
+uv run ruff check .
 ```
 
 ### Nix in Nix develop
@@ -79,7 +85,7 @@ ruff check .
 To fix linter errors and warning if possible run following command:
 
 ```bash
-uv tool run ruff check --fix .
+uv run ruff check --fix .
 ```
 
 ### Nix in Nix develop
