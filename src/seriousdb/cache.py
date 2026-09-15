@@ -78,7 +78,7 @@ class Cache:
                 f.write(json.dumps(self.db).encode())
 
 
-def _write_default(filename: str) -> dict[str, str]:
+def _write_default(filename: str) -> dict:
     with open(filename, "wb") as f:
         f.write(json.dumps(DEFAULT_DB).encode())
     return dict(DEFAULT_DB)
