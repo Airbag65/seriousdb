@@ -59,7 +59,11 @@ class Cache:
                 try:
                     with open(filename, "rb") as f:
                         self.db = json.loads(f.read().decode())
-                except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                        if not isinstance(self.db, dict):
+                            raise TypeError(
+                                f"expected dict, got {type(self.db).__name__}"
+                            )
+                except (json.JSONDecodeError, UnicodeDecodeError, TypeError) as e:
                     backup = f"{filename}.corrupt-{int(time.time())}"
                     os.replace(filename, backup)
                     logger.warning(
