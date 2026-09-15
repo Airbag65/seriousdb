@@ -132,7 +132,7 @@ def test_delete_missing_key_returns_404(client):
     )
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "No does_not_exist key to delete"}
+    assert response.json() == {"detail": "No value set for key does_not_exist"}
 
 
 def test_get_missing_key_parameter_returns_422(client):
