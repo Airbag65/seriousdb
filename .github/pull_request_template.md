@@ -1,8 +1,8 @@
-## Why
+## Motivation
 
 <!-- What problem or need does this PR address? Link an issue when applicable. -->
 
-## What changed
+## Key Changes
 
 <!-- Summarize the changes in concise bullets. Call out compatibility or breaking changes. -->
 
