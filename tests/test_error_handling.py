@@ -137,6 +137,7 @@ class ApiErrorResponseTests(unittest.TestCase):
             self.client.get("/db", params={"key": "name"}),
             self.client.put("/db", params={"key": "name", "value": "Alice"}),
             self.client.delete("/db", params={"key": "name"}),
+            self.client.get("/db/all"),
         ):
             self.assertEqual(response.status_code, 503)
             self.assertEqual(response.json()["error"], "service_unavailable")
@@ -144,6 +145,11 @@ class ApiErrorResponseTests(unittest.TestCase):
 
     def test_missing_query_parameter_returns_a_structured_422(self):
         response = self.client.get("/db")
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()["error"], "request_validation_error")
+
+    def test_rejected_query_parameter_returns_a_structured_422(self):
+        response = self.client.put("/db", params={"key": "", "value": "Alice"})
         self.assertEqual(response.status_code, 422)
         self.assertEqual(response.json()["error"], "request_validation_error")
 

@@ -13,33 +13,30 @@ DEFAULT_DB = {"default": "default"}
 
 class Cache:
     def __init__(self):
-        self.filename = None
-        self.db = None
+        self.filename: str | None = None
+        self.db: dict[str, str] | None = None
         self.lock = Lock()
 
-
-    def insert(self, key: str, value: str):
+    def insert(self, key: str, value: str) -> str:
         with self.lock:
             require_db(self)[key] = value
         return value
 
-
-    def select(self, key: str):
+    def select(self, key: str) -> str:
         with self.lock:
             val = require_db(self).get(key, None)
         if val is None:
             raise ResourceNotFoundError(f"No value set for key {key}")
         return val
 
-
-    def delete(self, key: str):
+    def delete(self, key: str) -> str:
         with self.lock:
             val = require_db(self).pop(key, None)
         if val is None:
             raise ResourceNotFoundError(f"No value set for key {key}")
         return val
 
-    def load(self, filename: str):
+    def load(self, filename: str) -> None:
         with self.lock:
             if not os.path.isfile(filename):
                 self.db = _write_default(filename)
@@ -47,7 +44,11 @@ class Cache:
                 try:
                     with open(filename, "rb") as f:
                         self.db = json.loads(f.read().decode())
-                except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                        if not isinstance(self.db, dict):
+                            raise TypeError(
+                                f"expected dict, got {type(self.db).__name__}"
+                            )
+                except (json.JSONDecodeError, UnicodeDecodeError, TypeError) as e:
                     backup = f"{filename}.corrupt-{int(time.time())}"
                     os.replace(filename, backup)
                     logger.warning(
@@ -59,16 +60,15 @@ class Cache:
                     self.db = _write_default(filename)
             self.filename = filename
 
-
-    def flush(self):
+    def flush(self) -> None:
         with self.lock:
-            if self.db is None:
+            if self.db is None or self.filename is None:
                 return
             with open(self.filename, "wb+") as f:
                 f.write(json.dumps(self.db).encode())
 
 
-def _write_default(filename: str) -> dict:
+def _write_default(filename: str) -> dict[str, str]:
     with open(filename, "wb") as f:
         f.write(json.dumps(DEFAULT_DB).encode())
     return dict(DEFAULT_DB)
