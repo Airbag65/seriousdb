@@ -136,19 +136,3 @@ All errors share the same JSON structure:
 | `422`  | `request_validation_error` | A required query parameter is missing or has the wrong type. |
 | `503`  | `service_unavailable`      | The database file could not be opened and loaded.            |
 | `500`  | `internal_server_error`    | An unexpected error. Details are never returned.             |
-
-````
-
-And change the corresponding #28 PR bullet from:
-
-```text
-- Document the possible `500` response when the database has not been loaded.
-````
-
-to:
-
-```text
-- Document the possible `503` response when the database has not been loaded.
-```
-
-Postamble: after replacing the file, stage it and inspect the staged diff before committing.
