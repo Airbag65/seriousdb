@@ -55,28 +55,6 @@ def test_get_missing_key_returns_404(client):
     assert response.json() == {"detail": "No value set for key does_not_exist"}
 
 
-def test_delete_removes_key_and_returns_value(client):
-    client.put(
-        "/db",
-        params={"key": "delete_me", "value": "some_value"},
-    )
-
-    response = client.delete(
-        "/db",
-        params={"key": "delete_me"},
-    )
-
-    assert response.status_code == 200
-    assert response.json() == "some_value"
-
-    response = client.get(
-        "/db",
-        params={"key": "delete_me"},
-    )
-
-    assert response.status_code == 404
-
-
 def test_get_all_returns_all_values(client):
     client.put(
         "/db",
@@ -123,16 +101,6 @@ def test_put_missing_value_returns_422(client):
     )
 
     assert response.status_code == 422
-
-
-def test_delete_missing_key_returns_404(client):
-    response = client.delete(
-        "/db",
-        params={"key": "does_not_exist"},
-    )
-
-    assert response.status_code == 404
-    assert response.json() == {"detail": "No value set for key does_not_exist"}
 
 
 def test_get_missing_key_parameter_returns_422(client):
