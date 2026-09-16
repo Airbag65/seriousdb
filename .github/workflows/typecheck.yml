@@ -28,5 +28,5 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
-      - name: Check linting
-        run: uvx ty check .
+      - name: Perform type-checking
+        run: uv run ty check .
