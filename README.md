@@ -2,8 +2,7 @@
 
 `seriousdb` is a small HTTP-based key-value store written in Python using [FastAPI](https://fastapi.tiangolo.com/).
 
-For setup, usage, architecture, persistence, and contribution guidance, see the
-[documentation](docs/).
+For setup, usage, architecture, persistence, and contribution guidance, see the [documentation](docs/).
 
 ## Quick Start
 
@@ -47,6 +46,7 @@ The `.env` file is gitignored and should never be committed.
 - [Development guide](docs/development.md)
 - [Persistence](docs/persistence.md)
 - [Contributing](docs/contributing.md)
+- [Testing](docs/testing.md)
 
 ## License
 
